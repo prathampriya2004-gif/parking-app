@@ -7,7 +7,7 @@ st.set_page_config(page_title="Parking App", layout="centered")
 # ---------------- CONFIG ----------------
 TWILIO_SID = "AC775ceee27f35184ad5350d70d7bd63b3"
 TWILIO_AUTH = "3d51d3fa16baec3b25fdb5ad265bd5a8"
-TWILIO_NUMBER = "7019228583"
+TWILIO_NUMBER = "+91 7019228583"
 
 client = Client(TWILIO_SID, TWILIO_AUTH)
 
