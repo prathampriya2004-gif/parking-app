@@ -1,112 +1,173 @@
 import streamlit as st
 import random
+import os
 from twilio.rest import Client
 
-st.set_page_config(page_title="Parking App", layout="centered")
-
-# ---------------- CONFIG ----------------
-import os
-
+# --------------------------- TWILIO SETUP ---------------------------
 TWILIO_SID = os.getenv("TWILIO_SID")
 TWILIO_AUTH = os.getenv("TWILIO_AUTH")
 TWILIO_NUMBER = os.getenv("TWILIO_NUMBER")
 
-
 client = Client(TWILIO_SID, TWILIO_AUTH)
 
-# ---------------- SESSION ----------------
+def send_otp(phone, otp):
+    try:
+        client.messages.create(
+            body=f"Your Parking App OTP is: {otp}",
+            from_=TWILIO_NUMBER,
+            to=phone
+        )
+        return True
+    except Exception as e:
+        st.error("Failed to send OTP. Check Twilio setup.")
+        st.write(e)
+        return False
+
+
+# --------------------------- SESSION SETUP ---------------------------
 if "page" not in st.session_state:
-    st.session_state.page = 1
-if "generated" not in st.session_state:
-    st.session_state.generated = ""
-if "details" not in st.session_state:
-    st.session_state.details = {}
+    st.session_state.page = "registration_type"
 
-def next_page(): st.session_state.page += 1
-def prev_page(): st.session_state.page -= 1
+if "selected_type" not in st.session_state:
+    st.session_state.selected_type = None
 
-# ---------------- FUNCTION TO SEND OTP ----------------
-def send_real_otp(phone, otp):
-    message = client.messages.create(
-        body=f"Your OTP for Parking App is: {otp}",
-        from_=TWILIO_NUMBER,
-        to=phone
+if "otp_generated" not in st.session_state:
+    st.session_state.otp_generated = ""
+
+
+# --------------------------- PAGE NAVIGATION ---------------------------
+def go(page):
+    st.session_state.page = page
+
+
+# --------------------------- REGISTRATION TYPE PAGE ---------------------------
+if st.session_state.page == "registration_type":
+    st.title("🏷 Registration Type")
+
+    st.session_state.selected_type = st.radio(
+        "Select who you are:",
+        [
+            "Individual Service Provider",
+            "Commercial Service Provider",
+            "Service Seeker"
+        ]
     )
-    return message.sid
 
-# ---------------- PAGE 1 ----------------
-if st.session_state.page == 1:
-    st.title("📱 Registration")
+    if st.button("Next ➡"):
+        go("otp")
 
-    phone = st.text_input("Enter phone number (include country code)")
 
-    if st.button("Send OTP ➡"):
-        if phone.strip() == "":
-            st.error("Enter a valid phone number.")
-        else:
-            otp = str(random.randint(1000, 9999))     # generate OTP
-            st.session_state.generated = otp
+# --------------------------- OTP PAGE ---------------------------
+elif st.session_state.page == "otp":
+    st.title("🔐 OTP Authentication")
 
-            # Send OTP using Twilio
-            try:
-                send_real_otp(phone, otp)
-                st.success("OTP sent to your phone!")
-                next_page()
-            except Exception as e:
-                st.error("Failed to send OTP. Check Twilio setup.")
-                st.write(e)
+    phone = st.text_input("Mobile Number (with country code)")
 
-# ---------------- PAGE 2 ----------------
-elif st.session_state.page == 2:
-    st.title("🔐 Verify OTP")
+    if st.session_state.otp_generated == "":
+        if st.button("Send OTP"):
+            otp = str(random.randint(1000, 9999))
+            st.session_state.otp_generated = otp
+
+            if send_otp(phone, otp):
+                st.success("OTP sent! Please check your phone.")
 
     entered_otp = st.text_input("Enter OTP")
 
-    col1, col2 = st.columns(2)
-
-    if col1.button("⬅ Back"):
-        prev_page()
-
-    if col2.button("Verify ➡"):
-        if entered_otp == st.session_state.generated:
-            st.success("OTP verified!")
-            next_page()
+    if st.button("Submit OTP"):
+        if entered_otp == st.session_state.otp_generated:
+            st.success("OTP Verified")
+            go("personal_details")
         else:
             st.error("Incorrect OTP")
 
-# ---------------- PAGE 3 ----------------
-elif st.session_state.page == 3:
+
+# --------------------------- PERSONAL DETAILS PAGE ---------------------------
+elif st.session_state.page == "personal_details":
     st.title("👤 Personal Details")
 
-    name = st.text_input("Full Name")
-    email = st.text_input("Email Address")
+    first = st.text_input("First Name")
+    last = st.text_input("Last Name")
+    email = st.text_input("Email ID")
+    age = st.number_input("Age", min_value=1, max_value=120)
+    gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+    city = st.text_input("City")
+    nationality = st.text_input("Nationality")
+    aadhaar_front = st.file_uploader("Upload Aadhaar Front", type=["jpg", "png"])
+    aadhaar_back = st.file_uploader("Upload Aadhaar Back", type=["jpg", "png"])
 
-    col1, col2 = st.columns(2)
-
-    if col1.button("⬅ Back"):
-        prev_page()
-
-    if col2.button("Continue ➡"):
-        if name.strip() == "" or email.strip() == "":
-            st.error("Please fill all fields.")
+    if st.button("Continue ➡"):
+        if st.session_state.selected_type == "Individual Service Provider":
+            go("service_provider")
+        elif st.session_state.selected_type == "Service Seeker":
+            go("service_seeker")
         else:
-            st.session_state.details = {"name": name, "email": email}
-            next_page()
+            st.success("Commercial Provider module coming soon!")
 
-# ---------------- PAGE 4 ----------------
-elif st.session_state.page == 4:
-    st.title("🚗 Parking Space Search")
 
-    duration = st.selectbox("Duration", ["Hourly", "Daily", "Monthly"])
-    location = st.text_input("Preferred Location")
+# --------------------------- INDIVIDUAL SERVICE PROVIDER PAGE ---------------------------
+elif st.session_state.page == "service_provider":
+    st.title("🏠 Individual Service Provider")
 
-    col1, col2 = st.columns(2)
+    parking_type = st.selectbox(
+        "Parking Type",
+        [
+            "Apartment - Owned",
+            "Apartment - Rented",
+            "Independent House - Owned",
+            "Independent House - Rented"
+        ]
+    )
 
-    if col1.button("⬅ Back"):
-        prev_page()
+    square_ft = st.number_input("Parking Area (Sq. Ft)")
 
-    if col2.button("Search"):
-        if location.strip() == "":
-            st.error("Enter a location.")
-        else:
-            st.success(f"Showing {duration} parking spots near {location} (demo).")
+    st.subheader("Upload Parking Photos (up to 5)")
+    photos = st.file_uploader("Select Photos", accept_multiple_files=True)
+
+    timing = st.selectbox(
+        "Timing Flexibility",
+        ["Flexible", "Time-Specific"]
+    )
+
+    charges = st.selectbox(
+        "Per Month Charges (₹)",
+        [1500, 2000, 2500, 3000, 3500, 4000, 4500]
+    )
+
+    remarks = st.text_area("Remarks")
+
+    if st.button("Submit Details"):
+        st.success("Details submitted successfully! 🎉")
+
+
+# --------------------------- SERVICE SEEKER PAGE ---------------------------
+elif st.session_state.page == "service_seeker":
+    st.title("🔍 Looking for Parking Space")
+
+    parking_type = st.selectbox("Parking Type", ["Apartment", "Independent House"])
+    distance = st.selectbox("Search Radius (KM)", [1, 2, 3])
+    timing = st.selectbox("Timing", ["Flexible", "Time-Specific"])
+    charges = st.selectbox(
+        "Max Per Month Budget (₹)",
+        [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500]
+    )
+    comment = st.text_area("Additional Comments")
+
+    interest = st.radio(
+        "Are you interested?",
+        ["Interested - Show Contact Number", "Not Interested"]
+    )
+
+    pay_option = st.radio(
+        "Choose Payment Option",
+        [
+            "₹100 per contact",
+            "₹500 per contact",
+            "₹800 per contact"
+        ]
+    )
+
+    if st.button("Search Parking"):
+        st.success("Showing parking options near you... (demo)")
+
+
+# --------------------------- END ---------------------------
