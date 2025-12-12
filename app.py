@@ -1,229 +1,203 @@
 import streamlit as st
 import random
-import os
-from twilio.rest import Client
 
+# ================= PAGE CONFIG =================
+st.set_page_config(
+    page_title="QuickPark",
+    layout="centered"
+)
 
-# -----------------------------------------------------------
-# TWILIO SETUP (REAL OTP)
-# -----------------------------------------------------------
-TWILIO_SID = os.getenv("TWILIO_SID")
-TWILIO_AUTH = os.getenv("TWILIO_AUTH")
-TWILIO_NUMBER = os.getenv("TWILIO_NUMBER")
-
-client = Client(TWILIO_SID, TWILIO_AUTH)
-
-def send_real_otp(phone, otp):
-    try:
-        client.messages.create(
-            body=f"Your Parking App OTP is {otp}",
-            from_=TWILIO_NUMBER,
-            to=phone
-        )
-        return True
-    except Exception as e:
-        st.error("❌ OTP sending failed.")
-        st.write(e)
-        return False
-
-
-# -----------------------------------------------------------
-# PAGE CONFIG + CUSTOM UI
-# -----------------------------------------------------------
-st.set_page_config(page_title="Smart Parking App", layout="centered")
-
+# ================= DARK UI + CHAT ICON =================
 st.markdown("""
 <style>
 
+/* ---------- BACKGROUND ---------- */
 body {
-    background: linear-gradient(150deg, #3c1053, #ad5389);
-    color: white !important;
+    background-color: #0b0b0f;
 }
-
 .main {
-    background: transparent;
+    background-color: #0b0b0f;
+    padding-bottom: 120px;
 }
 
-h1, h2, h3, label, p, span {
-    color: white !important;
-}
-
-/* GLASS CARD */
-.glass-card {
-    background: rgba(255, 255, 255, 0.18);
-    border-radius: 18px;
-    padding: 25px 25px;
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    margin-top: 20px;
-    box-shadow: 0 8px 35px rgba(0,0,0,0.25);
-}
-
-/* BUTTONS */
-button[kind="primary"] {
-    background: linear-gradient(90deg, #ff5f6d, #ffc371) !important;
-    color: white !important;
-    border-radius: 12px !important;
-    padding: 12px 20px !important;
-    font-size: 18px !important;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
-}
-
-/* TEXT INPUTS */
-input, textarea, select {
-    border-radius: 10px !important;
-}
-
-/* TITLE */
-.fancy-title {
-    font-size: 38px !important;
+/* ---------- HEADINGS ---------- */
+h1, h2, h3 {
+    color: #ffffff;
+    font-weight: 800;
     text-align: center;
-    font-weight: 900;
-    text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* ---------- CARD ---------- */
+.card {
+    background-color: #1a1a1f;
+    border-radius: 18px;
+    padding: 22px;
+    margin-top: 20px;
+    box-shadow: 0px 12px 30px rgba(0,0,0,0.7);
+}
+
+/* ---------- TEXT ---------- */
+label, p, span {
+    color: #e5e7eb !important;
+    font-size: 15px;
+}
+
+/* ---------- INPUTS ---------- */
+input, textarea, select {
+    background-color: #26262c !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid #3f3f46 !important;
+    padding: 12px !important;
+}
+
+/* ---------- BUTTONS ---------- */
+button[kind="primary"] {
+    background: linear-gradient(90deg, #2563eb, #1e40af) !important;
+    color: white !important;
+    border-radius: 14px !important;
+    font-size: 18px !important;
+    padding: 14px !important;
+    width: 100% !important;
+    box-shadow: 0px 6px 18px rgba(37,99,235,0.4);
+}
+
+/* ---------- CHATBOT ICON ---------- */
+.chatbot {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    border-radius: 50%;
+    box-shadow: 0px 6px 20px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    cursor: pointer;
+    z-index: 9999;
+}
+
+.chatbot:hover {
+    transform: scale(1.08);
 }
 
 </style>
+
+<div class="chatbot" title="Chatbot (Coming Soon)">💬</div>
 """, unsafe_allow_html=True)
 
-
-# -----------------------------------------------------------
-# SESSION
-# -----------------------------------------------------------
+# ================= SESSION =================
 if "page" not in st.session_state:
-    st.session_state.page = "registration_type"
+    st.session_state.page = "register"
 
-if "selected_type" not in st.session_state:
-    st.session_state.selected_type = None
+if "otp" not in st.session_state:
+    st.session_state.otp = ""
 
-if "otp_generated" not in st.session_state:
-    st.session_state.otp_generated = None
+def go(page):
+    st.session_state.page = page
 
-def go(p): st.session_state.page = p
-
-
-# -----------------------------------------------------------
-# PAGE: REGISTRATION TYPE
-# -----------------------------------------------------------
-if st.session_state.page == "registration_type":
-    st.markdown("<h1 class='fancy-title'>🚗 Smart Parking App</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+# ================= PAGE: REGISTRATION TYPE =================
+if st.session_state.page == "register":
+    st.markdown("<h1>🚗 QuickPark</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
     st.subheader("Choose Your Role")
 
-    st.session_state.selected_type = st.radio(
+    role = st.radio(
         "",
         ["Individual Service Provider", "Commercial Service Provider", "Service Seeker"]
     )
 
-    if st.button("Next ➜"):
+    if st.button("Continue ➜"):
+        st.session_state.role = role
         go("otp")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-# -----------------------------------------------------------
-# PAGE: OTP
-# -----------------------------------------------------------
+# ================= PAGE: OTP =================
 elif st.session_state.page == "otp":
-    st.markdown("<h1 class='fancy-title'>🔐 Verify Your Number</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+    st.markdown("<h1>🔐 Verify Phone</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
-    phone = st.text_input("Enter Phone Number (with country code)")
+    phone = st.text_input("Phone Number")
 
     if st.button("Send OTP"):
-        otp = str(random.randint(1000, 9999))
-        st.session_state.otp_generated = otp
-
-        if send_real_otp(phone, otp):
-            st.success("OTP sent to your phone ✔")
-        else:
-            st.error("OTP failed. Check Twilio region restrictions.")
+        st.session_state.otp = str(random.randint(1000, 9999))
+        st.success(f"OTP sent (demo): {st.session_state.otp}")
 
     user_otp = st.text_input("Enter OTP")
 
     if st.button("Verify ➜"):
-        if user_otp == st.session_state.otp_generated:
-            st.success("OTP Verified ✔")
+        if user_otp == st.session_state.otp:
             go("details")
         else:
-            st.error("Incorrect OTP ❌")
+            st.error("Incorrect OTP")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-# -----------------------------------------------------------
-# PAGE: PERSONAL DETAILS
-# -----------------------------------------------------------
+# ================= PAGE: PERSONAL DETAILS =================
 elif st.session_state.page == "details":
-    st.markdown("<h1 class='fancy-title'>👤 Personal Details</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+    st.markdown("<h1>👤 Personal Details</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     first = col1.text_input("First Name")
     last = col2.text_input("Last Name")
 
-    email = st.text_input("Email ID")
+    email = st.text_input("Email")
     age = st.number_input("Age", 1, 100)
     gender = st.selectbox("Gender", ["Male", "Female", "Other"])
     city = st.text_input("City")
     nationality = st.text_input("Nationality")
 
-    aadhaar_front = st.file_uploader("Upload Aadhaar Front", type=["jpg","png"])
-    aadhaar_back = st.file_uploader("Upload Aadhaar Back", type=["jpg","png"])
+    aad1 = st.file_uploader("Aadhaar Front", type=["jpg", "png"])
+    aad2 = st.file_uploader("Aadhaar Back", type=["jpg", "png"])
 
     if st.button("Continue ➜"):
-        if st.session_state.selected_type == "Individual Service Provider":
-            go("provider")
-        else:
+        if st.session_state.role == "Service Seeker":
             go("seeker")
+        else:
+            go("provider")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-# -----------------------------------------------------------
-# PAGE: INDIVIDUAL PROVIDER
-# -----------------------------------------------------------
+# ================= PAGE: PROVIDER =================
 elif st.session_state.page == "provider":
-    st.markdown("<h1 class='fancy-title'>🏠 Parking Provider</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+    st.markdown("<h1>🏠 Parking Provider</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
-    parking_type = st.selectbox(
+    ptype = st.selectbox(
         "Parking Type",
         ["Apartment - Owned", "Apartment - Rented", "Independent House - Owned", "Independent House - Rented"]
     )
 
-    size = st.number_input("Parking Area (Sq. Ft.)")
-
-    photos = st.file_uploader("Upload Parking Photos (up to 5)", accept_multiple_files=True)
-
-    timing = st.selectbox("Timing Flexibility", ["Flexible", "Time-Specific"])
-
-    charges = st.selectbox("Monthly Charges", [1500,2000,2500,3000,3500,4000,4500])
-
+    area = st.number_input("Parking Area (Sq. Ft.)")
+    photos = st.file_uploader("Parking Photos (up to 5)", accept_multiple_files=True)
+    timing = st.selectbox("Timing", ["Flexible", "Time Specific"])
+    charge = st.selectbox("Monthly Charges", [1500, 2000, 2500, 3000, 3500, 4000, 4500])
     remarks = st.text_area("Remarks")
 
-    if st.button("Submit Details ✔"):
-        st.success("Parking details submitted successfully! 🎉")
+    if st.button("Submit Listing ✔"):
+        st.success("Parking listed successfully!")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-# -----------------------------------------------------------
-# PAGE: SERVICE SEEKER
-# -----------------------------------------------------------
+# ================= PAGE: SEEKER =================
 elif st.session_state.page == "seeker":
-    st.markdown("<h1 class='fancy-title'>🔍 Find Parking</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+    st.markdown("<h1>🔍 Find Parking</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='card'>", unsafe_allow_html=True)
 
-    type_sel = st.selectbox("Parking Type", ["Apartment", "Independent House"])
-    radius = st.selectbox("Search Radius (KM)", [1,2,3])
-    timing = st.selectbox("Timing", ["Flexible", "Time-Specific"])
-    budget = st.selectbox("Max Budget (₹)", [1500,2000,2500,3000,3500,4000])
+    ptype = st.selectbox("Parking Type", ["Apartment", "Independent House"])
+    radius = st.selectbox("Distance (KM)", [1, 2, 3])
+    timing = st.selectbox("Timing", ["Flexible", "Time Specific"])
+    budget = st.selectbox("Budget", [1500, 2000, 2500, 3000, 3500, 4000])
+    comment = st.text_area("Additional Notes")
 
-    comment = st.text_area("Additional Comments")
-
-    if st.button("Search Now 🔎"):
-        st.success("Showing best parking options near you... (demo)")
+    if st.button("Search Parking 🔍"):
+        st.success("Showing parking results (demo)")
 
     st.markdown("</div>", unsafe_allow_html=True)
