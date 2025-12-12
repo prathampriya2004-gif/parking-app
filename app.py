@@ -9,6 +9,94 @@ st.set_page_config(
     layout="centered"
 )
 
+# ================= FORCE BLACK UI (NO WHITE ANYWHERE) =================
+st.markdown("""
+<style>
+
+/* FORCE BLACK BACKGROUND EVERYWHERE */
+html, body, [class*="css"] {
+    background-color: #000000 !important;
+}
+.stApp {
+    background-color: #000000 !important;
+}
+.main {
+    background-color: #000000 !important;
+}
+.block-container {
+    background-color: #000000 !important;
+    padding-top: 2rem;
+    padding-bottom: 8rem;
+}
+
+/* HEADINGS */
+h1, h2, h3 {
+    color: #ffffff !important;
+    font-weight: 800;
+    text-align: center;
+}
+
+/* CARD SECTIONS */
+.card {
+    background-color: #121212;
+    border-radius: 18px;
+    padding: 24px;
+    margin-top: 20px;
+    border: 1px solid #2a2a2a;
+    box-shadow: 0px 8px 24px rgba(0,0,0,0.85);
+}
+
+/* TEXT */
+label, p, span, div {
+    color: #d1d5db !important;
+    font-size: 15px;
+}
+
+/* INPUTS */
+input, textarea, select {
+    background-color: #1f1f1f !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid #3a3a3a !important;
+    padding: 12px !important;
+}
+
+/* BUTTONS */
+button {
+    border-radius: 14px !important;
+}
+button[kind="primary"] {
+    background: linear-gradient(90deg, #2563eb, #1e40af) !important;
+    color: white !important;
+    font-size: 17px !important;
+    padding: 14px !important;
+    width: 100% !important;
+    box-shadow: 0px 6px 18px rgba(37,99,235,0.45);
+}
+
+/* CHATBOT ICON */
+.chatbot {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 58px;
+    height: 58px;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: white;
+    cursor: pointer;
+    z-index: 9999;
+}
+
+</style>
+
+<div class="chatbot" title="Chatbot (Coming Soon)">💬</div>
+""", unsafe_allow_html=True)
+
 # ================= TWILIO SETUP =================
 TWILIO_SID = os.getenv("TWILIO_SID")
 TWILIO_AUTH = os.getenv("TWILIO_AUTH")
@@ -27,93 +115,13 @@ def send_otp(phone, otp):
                 to=phone
             )
             return True, None
-        else:
-            return False, "Twilio not configured"
+        return False, "Twilio not configured"
     except Exception as e:
         return False, str(e)
-
-# ================= UI STYLES =================
-st.markdown("""
-<style>
-
-/* ===== BACKGROUND ===== */
-body {
-    background-color: #000000;
-}
-.main {
-    background-color: #000000;
-    padding-bottom: 120px;
-}
-
-/* ===== HEADINGS ===== */
-h1, h2, h3 {
-    color: #ffffff;
-    font-weight: 800;
-    text-align: center;
-}
-
-/* ===== CARD ===== */
-.card {
-    background-color: #121212;
-    border-radius: 18px;
-    padding: 24px;
-    margin-top: 20px;
-    border: 1px solid #2a2a2a;
-    box-shadow: 0px 8px 24px rgba(0,0,0,0.85);
-}
-
-/* ===== TEXT ===== */
-label, p, span {
-    color: #d1d5db !important;
-    font-size: 15px;
-}
-
-/* ===== INPUTS ===== */
-input, textarea, select {
-    background-color: #1f1f1f !important;
-    color: #ffffff !important;
-    border-radius: 12px !important;
-    border: 1px solid #3a3a3a !important;
-    padding: 12px !important;
-}
-
-/* ===== BUTTONS ===== */
-button[kind="primary"] {
-    background: linear-gradient(90deg, #2563eb, #1e40af) !important;
-    color: white !important;
-    border-radius: 14px !important;
-    font-size: 17px !important;
-    padding: 14px !important;
-    width: 100% !important;
-    box-shadow: 0px 6px 18px rgba(37,99,235,0.45);
-}
-
-/* ===== CHATBOT ICON ===== */
-.chatbot {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    width: 58px;
-    height: 58px;
-    background: linear-gradient(135deg, #2563eb, #1e40af);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-    color: white;
-    cursor: pointer;
-    z-index: 9999;
-}
-</style>
-
-<div class="chatbot" title="Chatbot (Coming Soon)">💬</div>
-""", unsafe_allow_html=True)
 
 # ================= SESSION =================
 if "page" not in st.session_state:
     st.session_state.page = "register"
-
 if "otp" not in st.session_state:
     st.session_state.otp = ""
 
@@ -161,8 +169,8 @@ elif st.session_state.page == "otp":
         if ok:
             st.success("OTP sent to your phone")
         else:
-            st.warning("OTP could not be sent via SMS.")
-            st.info(f"Demo OTP (for testing): {st.session_state.otp}")
+            st.warning("SMS failed – showing demo OTP")
+            st.info(f"OTP: {st.session_state.otp}")
             if err:
                 st.caption(err)
 
@@ -209,7 +217,6 @@ elif st.session_state.page == "provider":
         ["Apartment - Owned", "Apartment - Rented",
          "Independent House - Owned", "Independent House - Rented"]
     )
-
     st.number_input("Parking Area (Sq. Ft.)")
     st.file_uploader("Parking Photos", accept_multiple_files=True)
     st.selectbox("Timing", ["Flexible", "Time Specific"])
