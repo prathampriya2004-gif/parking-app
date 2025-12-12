@@ -9,79 +9,79 @@ st.set_page_config(
     layout="centered"
 )
 
-# ================= FORCE BLACK UI (NO WHITE ANYWHERE) =================
+# ================= AESTHETIC UI THEME =================
 st.markdown("""
 <style>
 
-/* FORCE BLACK BACKGROUND EVERYWHERE */
-html, body, [class*="css"] {
-    background-color: #000000 !important;
+/* ===== GLOBAL BACKGROUND ===== */
+html, body, .stApp {
+    background: linear-gradient(180deg, #0f172a, #020617) !important;
 }
-.stApp {
-    background-color: #000000 !important;
-}
-.main {
-    background-color: #000000 !important;
-}
-.block-container {
-    background-color: #000000 !important;
+
+/* Remove white containers */
+.main, .block-container {
+    background: transparent !important;
     padding-top: 2rem;
     padding-bottom: 8rem;
 }
 
-/* HEADINGS */
+/* ===== HEADINGS ===== */
 h1, h2, h3 {
-    color: #ffffff !important;
+    color: #f8fafc !important;
     font-weight: 800;
     text-align: center;
 }
 
-/* CARD SECTIONS */
+/* ===== CARDS ===== */
 .card {
-    background-color: #121212;
-    border-radius: 18px;
-    padding: 24px;
-    margin-top: 20px;
-    border: 1px solid #2a2a2a;
-    box-shadow: 0px 8px 24px rgba(0,0,0,0.85);
+    background: #111827;
+    border-radius: 20px;
+    padding: 26px;
+    margin-top: 22px;
+    border: 1px solid #1f2933;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
 }
 
-/* TEXT */
+/* ===== TEXT ===== */
 label, p, span, div {
-    color: #d1d5db !important;
+    color: #e5e7eb !important;
     font-size: 15px;
 }
 
-/* INPUTS */
+/* ===== INPUTS ===== */
 input, textarea, select {
-    background-color: #1f1f1f !important;
-    color: #ffffff !important;
-    border-radius: 12px !important;
-    border: 1px solid #3a3a3a !important;
-    padding: 12px !important;
+    background-color: #020617 !important;
+    color: #f8fafc !important;
+    border-radius: 14px !important;
+    border: 1px solid #334155 !important;
+    padding: 14px !important;
 }
 
-/* BUTTONS */
-button {
-    border-radius: 14px !important;
-}
+/* ===== PRIMARY BUTTON ===== */
 button[kind="primary"] {
-    background: linear-gradient(90deg, #2563eb, #1e40af) !important;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6) !important;
     color: white !important;
+    border-radius: 16px !important;
     font-size: 17px !important;
     padding: 14px !important;
     width: 100% !important;
-    box-shadow: 0px 6px 18px rgba(37,99,235,0.45);
+    border: none !important;
+    box-shadow: 0px 8px 22px rgba(139,92,246,0.5);
 }
 
-/* CHATBOT ICON */
+/* ===== NAV BUTTONS ===== */
+button {
+    border-radius: 14px !important;
+}
+
+/* ===== CHATBOT ICON ===== */
 .chatbot {
     position: fixed;
-    bottom: 25px;
-    right: 25px;
-    width: 58px;
-    height: 58px;
-    background: linear-gradient(135deg, #2563eb, #1e40af);
+    bottom: 26px;
+    right: 26px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -90,6 +90,7 @@ button[kind="primary"] {
     color: white;
     cursor: pointer;
     z-index: 9999;
+    box-shadow: 0 10px 30px rgba(99,102,241,0.6);
 }
 
 </style>
@@ -97,14 +98,12 @@ button[kind="primary"] {
 <div class="chatbot" title="Chatbot (Coming Soon)">💬</div>
 """, unsafe_allow_html=True)
 
-# ================= TWILIO SETUP =================
+# ================= TWILIO =================
 TWILIO_SID = os.getenv("TWILIO_SID")
 TWILIO_AUTH = os.getenv("TWILIO_AUTH")
 TWILIO_NUMBER = os.getenv("TWILIO_NUMBER")
 
-twilio_client = None
-if TWILIO_SID and TWILIO_AUTH:
-    twilio_client = Client(TWILIO_SID, TWILIO_AUTH)
+twilio_client = Client(TWILIO_SID, TWILIO_AUTH) if TWILIO_SID else None
 
 def send_otp(phone, otp):
     try:
@@ -114,10 +113,10 @@ def send_otp(phone, otp):
                 from_=TWILIO_NUMBER,
                 to=phone
             )
-            return True, None
-        return False, "Twilio not configured"
-    except Exception as e:
-        return False, str(e)
+            return True
+    except:
+        pass
+    return False
 
 # ================= SESSION =================
 if "page" not in st.session_state:
@@ -125,20 +124,17 @@ if "page" not in st.session_state:
 if "otp" not in st.session_state:
     st.session_state.otp = ""
 
-def go(page):
-    st.session_state.page = page
+def go(p):
+    st.session_state.page = p
 
 # ================= HEADER =================
 st.markdown("<h1>🚗 QuickPark</h1>", unsafe_allow_html=True)
 
 # ================= NAV =================
 c1, c2, c3 = st.columns(3)
-if c1.button("🏠 Home"):
-    go("register")
-if c2.button("📞 Contact"):
-    go("contact")
-if c3.button("ℹ️ About"):
-    go("about")
+if c1.button("🏠 Home"): go("register")
+if c2.button("📞 Contact"): go("contact")
+if c3.button("ℹ️ About"): go("about")
 
 # ================= REGISTER =================
 if st.session_state.page == "register":
@@ -159,20 +155,16 @@ if st.session_state.page == "register":
 # ================= OTP =================
 elif st.session_state.page == "otp":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
-    st.subheader("🔐 Verify Phone Number")
+    st.subheader("🔐 Phone Verification")
 
     phone = st.text_input("Phone Number (with country code)")
 
     if st.button("Send OTP"):
         st.session_state.otp = str(random.randint(1000, 9999))
-        ok, err = send_otp(phone, st.session_state.otp)
-        if ok:
-            st.success("OTP sent to your phone")
+        if send_otp(phone, st.session_state.otp):
+            st.success("OTP sent successfully")
         else:
-            st.warning("SMS failed – showing demo OTP")
-            st.info(f"OTP: {st.session_state.otp}")
-            if err:
-                st.caption(err)
+            st.info(f"Demo OTP: {st.session_state.otp}")
 
     user_otp = st.text_input("Enter OTP")
 
@@ -180,7 +172,7 @@ elif st.session_state.page == "otp":
         if user_otp == st.session_state.otp:
             go("details")
         else:
-            st.error("Incorrect OTP")
+            st.error("Invalid OTP")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -189,21 +181,17 @@ elif st.session_state.page == "details":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("👤 Personal Details")
 
-    col1, col2 = st.columns(2)
-    col1.text_input("First Name")
-    col2.text_input("Last Name")
+    c1, c2 = st.columns(2)
+    c1.text_input("First Name")
+    c2.text_input("Last Name")
 
     st.text_input("Email")
     st.number_input("Age", 1, 100)
     st.selectbox("Gender", ["Male", "Female", "Other"])
     st.text_input("City")
-    st.text_input("Nationality")
 
     if st.button("Continue ➜"):
-        if st.session_state.role == "Service Seeker":
-            go("seeker")
-        else:
-            go("provider")
+        go("provider" if st.session_state.role != "Service Seeker" else "seeker")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -212,17 +200,14 @@ elif st.session_state.page == "provider":
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("🏠 Parking Provider")
 
-    st.selectbox(
-        "Parking Type",
-        ["Apartment - Owned", "Apartment - Rented",
-         "Independent House - Owned", "Independent House - Rented"]
-    )
+    st.selectbox("Parking Type", [
+        "Apartment - Owned", "Apartment - Rented",
+        "Independent House - Owned", "Independent House - Rented"
+    ])
+
     st.number_input("Parking Area (Sq. Ft.)")
-    st.file_uploader("Parking Photos", accept_multiple_files=True)
     st.selectbox("Timing", ["Flexible", "Time Specific"])
-    st.selectbox("Monthly Charges",
-                 [1500, 2000, 2500, 3000, 3500, 4000, 4500])
-    st.text_area("Remarks")
+    st.selectbox("Monthly Charges", [1500,2000,2500,3000,3500,4000])
 
     if st.button("Submit Listing"):
         st.success("Parking listed successfully!")
@@ -235,14 +220,11 @@ elif st.session_state.page == "seeker":
     st.subheader("🔍 Find Parking")
 
     st.selectbox("Parking Type", ["Apartment", "Independent House"])
-    st.selectbox("Distance (KM)", [1, 2, 3])
-    st.selectbox("Timing", ["Flexible", "Time Specific"])
-    st.selectbox("Budget",
-                 [1500, 2000, 2500, 3000, 3500, 4000])
-    st.text_area("Additional Notes")
+    st.selectbox("Distance (KM)", [1,2,3])
+    st.selectbox("Budget", [1500,2000,2500,3000,3500])
 
     if st.button("Search Parking"):
-        st.success("Showing parking results (demo)")
+        st.success("Results loaded (demo)")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -253,21 +235,11 @@ elif st.session_state.page == "contact":
 
     st.markdown("""
     **👤 Founder**  
-    **Suman Raju**
+    **Suman Raju**  
 
-    **📞 Phone**  
+    **📱 Phone**  
     +91-80-9986575103
     """)
-
-    st.markdown("---")
-    st.subheader("✉️ Send us a message")
-
-    st.text_input("Your Name")
-    st.text_input("Your Email")
-    st.text_area("Message")
-
-    if st.button("Send Message"):
-        st.success("Thank you! We’ll get back to you soon.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -277,13 +249,8 @@ elif st.session_state.page == "about":
     st.subheader("ℹ️ About QuickPark")
 
     st.write("""
-    QuickPark helps people easily find and provide parking spaces.
-
-    • List your parking space  
-    • Find parking near you  
-    • Simple, fast & secure  
-
-    Built with ❤️ using Streamlit.
+    QuickPark helps people easily list and find parking spaces.
+    A modern, secure, and easy-to-use parking solution.
     """)
 
     st.markdown("</div>", unsafe_allow_html=True)
